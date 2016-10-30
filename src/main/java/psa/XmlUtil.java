@@ -11,7 +11,9 @@ import psa.Objects.Import.ImportOrders;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * User: cbates
@@ -81,5 +83,15 @@ public class XmlUtil {
                 // do nothing
             }
         }
+    }
+
+    public static File createXmlFile(String filePath) {
+        Calendar now = Calendar.getInstance();
+        return new File(filePath +
+                now.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + " " +
+                now.get(Calendar.DATE) + ", " +
+                now.get(Calendar.HOUR) + "_" +
+                now.get(Calendar.MINUTE) + " " +
+                now.getDisplayName(Calendar.AM_PM, Calendar.SHORT, Locale.getDefault()) + ".xml");
     }
 }
