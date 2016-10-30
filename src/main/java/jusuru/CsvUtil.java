@@ -1,6 +1,8 @@
 package jusuru;
 
+import com.evnt.util.FbiMessage;
 import com.evnt.util.Util;
+import com.fbi.util.FbiException;
 import jusuru.Constants.ImportHeadersConst;
 import jusuru.Objects.ExportLine;
 import jusuru.Objects.ImportLine;
@@ -16,9 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * User: Chuck
@@ -99,17 +99,48 @@ public class CsvUtil {
         return orderList;
     }
 
-    public static void writeCsvFile(List<ExportLine> exportLines, File outputFile) {
+    public static void writeShippedOrders(List<ExportLine> exportLines, File outputFile) throws FbiException {
         CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator("\n");
 
+        String[] headers = {"orderNumber", "trackingNumber", "lotNumber"};
+        writeLines(exportLines, outputFile, csvFileFormat, headers);
+    }
+
+    public static void writeUnShippedOrders(List<ExportLine> exportLines, File outputFile) throws FbiException {
+        CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator("\n");
+
+        String[] headers = {"orderNumber"};
+        writeLines(exportLines, outputFile, csvFileFormat, headers);
+    }
+
+    public static File createCsvFile(String filePath) {
+        Calendar now = Calendar.getInstance();
+        return new File(filePath +
+                now.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.getDefault()) + " " +
+                now.get(Calendar.DATE) + ", " +
+                now.get(Calendar.HOUR) + "_" +
+                now.get(Calendar.MINUTE) + " " +
+                now.getDisplayName(Calendar.AM_PM, Calendar.SHORT, Locale.getDefault()) + ".csv");
+    }
+
+    private static void writeLines(List<ExportLine> exportLines, File outputFile, CSVFormat csvFileFormat, String[] headers) throws FbiException {
         try (FileWriter writer = new FileWriter(outputFile.getAbsoluteFile()); CSVPrinter printer = new CSVPrinter(writer, csvFileFormat)){
-            printer.printRecord(new String[] {"orderNumber", "trackingNumber", "lotNumber"});
+            printer.printRecord(headers);
 
             for (ExportLine line : exportLines) {
                 List<String> record = new ArrayList<>();
+                if (Util.isEmpty(line.getOrderNum())) {
+                    throw new FbiException(FbiMessage.FILE_WRITE_ERROR, "Order number required for export");
+                }
                 record.add(line.getOrderNum());
-                record.add(line.getTrackingNum());
-                record.add(line.getLotNum());
+
+                if (!Util.isEmpty(line.getTrackingNum())) {
+                    record.add(line.getTrackingNum());
+                }
+
+                if (!Util.isEmpty(line.getLotNum())) {
+                    record.add(line.getLotNum());
+                }
 
                 printer.printRecord(record);
             }
