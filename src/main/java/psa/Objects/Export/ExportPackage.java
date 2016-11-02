@@ -5,7 +5,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 /**
  * User: cbates
  */
-@XStreamAlias("Package")
+@XStreamAlias("package")
 public class ExportPackage {
     @XStreamAlias("ref3")
     private String ref3;
