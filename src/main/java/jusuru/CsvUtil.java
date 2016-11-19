@@ -4,6 +4,7 @@ import com.evnt.util.FbiMessage;
 import com.evnt.util.Util;
 import com.fbi.util.FbiException;
 import jusuru.Constants.ImportHeadersConst;
+import jusuru.Objects.ClearedItemInfo;
 import jusuru.Objects.ExportLine;
 import jusuru.Objects.ImportLine;
 import jusuru.Objects.ImportOrder;
@@ -24,7 +25,6 @@ import java.util.*;
  * User: Chuck
  */
 public class CsvUtil {
-
     public static List<ImportOrder> readCsvFile(File file) throws IOException, ParseException {
         CSVFormat format = CSVFormat.EXCEL.withHeader().withDelimiter(',');
         CSVParser parser = new CSVParser(new FileReader(file), format);
@@ -99,18 +99,16 @@ public class CsvUtil {
         return orderList;
     }
 
-    public static void writeShippedOrders(List<ExportLine> exportLines, File outputFile) throws FbiException {
+    public static void writeClearedItems(List<ClearedItemInfo> clearedItems, File outputFile) throws FbiException {
         CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator("\n");
-
-        String[] headers = {"orderNumber", "trackingNumber", "lotNumber"};
-        writeLines(exportLines, outputFile, csvFileFormat, headers);
+        String[] headers = {"orderNumber", "clientName", "shipToName", "poNumber", "itemNumber", "qty"};
+        writeClearedItemLines(clearedItems, outputFile, csvFileFormat, headers);
     }
 
-    public static void writeUnShippedOrders(List<ExportLine> exportLines, File outputFile) throws FbiException {
+    public static void writeShippedOrders(List<ExportLine> exportLines, File outputFile) throws FbiException {
         CSVFormat csvFileFormat = CSVFormat.DEFAULT.withRecordSeparator("\n");
-
         String[] headers = {"orderNumber"};
-        writeLines(exportLines, outputFile, csvFileFormat, headers);
+        writeExportLines(exportLines, outputFile, csvFileFormat, headers);
     }
 
     public static File createCsvFile(String filePath) {
@@ -123,7 +121,7 @@ public class CsvUtil {
                 now.getDisplayName(Calendar.AM_PM, Calendar.SHORT, Locale.getDefault()) + ".csv");
     }
 
-    private static void writeLines(List<ExportLine> exportLines, File outputFile, CSVFormat csvFileFormat, String[] headers) throws FbiException {
+    private static void writeExportLines(List<ExportLine> exportLines, File outputFile, CSVFormat csvFileFormat, String[] headers) throws FbiException {
         try (FileWriter writer = new FileWriter(outputFile.getAbsoluteFile()); CSVPrinter printer = new CSVPrinter(writer, csvFileFormat)){
             printer.printRecord(headers);
 
@@ -141,6 +139,42 @@ public class CsvUtil {
                 if (!Util.isEmpty(line.getLotNum())) {
                     record.add(line.getLotNum());
                 }
+
+                printer.printRecord(record);
+            }
+        } catch (IOException e) {
+            // Log something
+        }
+    }
+
+    private static void writeClearedItemLines(List<ClearedItemInfo> clearedItems, File outputFile, CSVFormat csvFileFormat, String[] headers) throws FbiException {
+        try (FileWriter writer = new FileWriter(outputFile.getAbsoluteFile()); CSVPrinter printer = new CSVPrinter(writer, csvFileFormat)){
+            printer.printRecord(headers);
+
+            for (ClearedItemInfo line : clearedItems) {
+                List<String> record = new ArrayList<>();
+                if (Util.isEmpty(line.getOrderNumber())) {
+                    throw new FbiException(FbiMessage.FILE_WRITE_ERROR, "Order number required for export");
+                }
+                record.add(line.getOrderNumber());
+
+                if (!Util.isEmpty(line.getClientName())) {
+                    record.add(line.getClientName());
+                }
+
+                if (!Util.isEmpty(line.getShipToName())) {
+                    record.add(line.getShipToName());
+                }
+
+                if (!Util.isEmpty(line.getPoNumber())) {
+                    record.add(line.getPoNumber());
+                }
+
+                if (!Util.isEmpty(line.getItemNumber())) {
+                    record.add(line.getItemNumber());
+                }
+
+                record.add(String.valueOf(line.getQty()));
 
                 printer.printRecord(record);
             }
